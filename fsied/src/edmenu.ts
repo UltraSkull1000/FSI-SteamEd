@@ -11,18 +11,32 @@ export class EdMainMenu implements vscode.TreeDataProvider<EdItem> {
 
 	getChildren(element?: EdItem): Thenable<EdItem[]>{
         var lessonDirectory = "";
+
         if(element === undefined){
             lessonDirectory = path.join(this.workspaceRoot, 'plans');
         }
 		else{
             lessonDirectory = element.path;
         }
+
 		let menuItems: EdItem[] = [];
 		fs.readdirSync(lessonDirectory).forEach(dir => {
 			var subunitPath = path.join(lessonDirectory, dir);
+			const stats = fs.statSync(subunitPath);
 			if(this.pathExists(subunitPath) && dir !== "Extensions"){
-                var item = new EdItem(dir, subunitPath, vscode.TreeItemCollapsibleState.Collapsed);
-				menuItems.push(item);
+				if(stats.isDirectory()){
+					var item = new EdItem(dir, subunitPath, vscode.TreeItemCollapsibleState.Collapsed);
+					menuItems.push(item);
+				}
+				else{
+					var item = new EdItem(dir, subunitPath, vscode.TreeItemCollapsibleState.None);
+					item.command = {
+						command: 'vscode.open',
+						title: 'Open File',
+						arguments: [vscode.Uri.file(subunitPath)]
+					};
+					menuItems.push(item);
+				}
 			}
 			else{
 				return Promise.resolve([]);
